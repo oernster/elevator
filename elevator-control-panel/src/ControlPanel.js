@@ -192,13 +192,9 @@ const ControlPanel = () => {
                 return null; // Return null if elevator ID doesn't match or destinations are undefined
               })}
             </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: '20px' }}>
-        {Object.keys(liftIndicators).map(elevatorId => (
-          <div key={elevatorId}>
-            <p><b>Elevator {elevatorId}:</b> {liftIndicators[elevatorId].direction} {liftIndicators[elevatorId].stop && <span style={{ color: 'red' }}>STOP</span>}</p>
+            <div style={{ marginTop: '20px' }}>
+              <p><b>{liftIndicators[lift.elevator].direction} {liftIndicators[lift.elevator].stop && <span style={{ color: 'red' }}>STOP</span>}</b></p>
+            </div>
           </div>
         ))}
       </div>
