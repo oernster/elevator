@@ -4,7 +4,7 @@
 
 ## Create a virtual environment and activate it.
 
-### pip install -r elevator/elevator_api/requirements.txt
+### pip install -r elevator/requirements.txt
 
 ### cd elevator_api
 
