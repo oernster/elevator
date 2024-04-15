@@ -1,0 +1,4 @@
+.yarn
+.pyc
+elevator_api/__pycache__/*.pyc
+../elevator-control-panel/yarn.lock
