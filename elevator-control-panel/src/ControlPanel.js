@@ -61,32 +61,32 @@ const ControlPanel = () => {
         console.error('Selected floor is not serviced by the elevator.');
         return;
       }
-  
+
       // Request the elevator to move to the selected floor
       const response = await axios.post('http://localhost:8000/api/lift/request/', {
         from_floor: null,
         to_floor: floor,
         elevatorId: targetElevator
       });
-  
+
       // Assuming the response contains updated elevator information
       setElevatorInfo(response.data);
-  
+
       setSelectedFloor(floor);
       setSelectedElevator(targetElevator);
-  
+
       // Reset highlighted floors, direction, and stop indicators for the specific elevator
       setHighlightedFloors(prevState => ({ ...prevState, [targetElevator]: null }));
       setDirectionIndicators(prevState => ({ ...prevState, [targetElevator]: '' }));
       setStopIndicators(prevState => ({ ...prevState, [targetElevator]: false }));
-  
+
       // Start sequential highlighting for the selected elevator
       await highlightFloorsSequentially(targetElevator, floor);
-  
+
       // Set the final floor to green after sequence is completed
       setHighlightedFloors(prevState => ({ ...prevState, [targetElevator]: floor }));
       setStopIndicators(prevState => ({ ...prevState, [targetElevator]: true }));
-  
+
       // Reset selected floor and elevator after a delay
       setTimeout(() => {
         setSelectedFloor(null);
@@ -98,7 +98,7 @@ const ControlPanel = () => {
       console.error('Error requesting elevator:', error);
     }
   };
-  
+
 
   const handleGlobalFloorSelection = async (floor) => {
     try {
@@ -107,16 +107,29 @@ const ControlPanel = () => {
         return;
       }
 
+      let nearestElevator = null;
+      let minDistance = Infinity;
+
       // Iterate through each elevator
       for (const elevator of lifts) {
         // Check if the elevator services the selected global floor
         if (elevator.serviced_floors.includes(floor)) {
-          // Call the function to handle floor selection for the current elevator
-          await handleFloorSelection(floor, elevator.elevator);
+          // Calculate the distance between the elevator's current floor and the requested floor
+          const distance = Math.abs(elevatorInfo.find(e => e.id === elevator.elevator).floor - floor);
+          // Update the nearest elevator if the current elevator is closer
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestElevator = elevator.elevator;
+          }
         }
       }
+
+      // Call the function to handle floor selection for the nearest elevator
+      if (nearestElevator) {
+        await handleFloorSelection(floor, nearestElevator);
+      }
     } catch (error) {
-      console.error('Error requesting all elevators to move:', error);
+      console.error('Error selecting nearest elevator:', error);
     }
   };
 
