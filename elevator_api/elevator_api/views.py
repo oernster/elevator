@@ -22,6 +22,10 @@ class ElevatorRequestView(APIView):
             elevator.floor = to_floor  # Update the current floor
             elevator.save()
 
+            # Update the destinations of the elevator
+            elevator.destinations.append(to_floor)  # Assuming destinations is a list field in the Elevator model
+            elevator.save()
+
             return Response({'message': 'Elevator requested successfully'})
         except Exception as e:
             return Response({'error': str(e)}, status=500)

@@ -4,7 +4,7 @@ import axios from 'axios';
 const ControlPanel = () => {
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [selectedElevator, setSelectedElevator] = useState(null);
-  const [elevatorInfo, setElevatorInfo] = useState({});
+  const [elevatorInfo, setElevatorInfo] = useState([]);
   const [lifts, setLifts] = useState([]);
 
   useEffect(() => {
@@ -27,19 +27,24 @@ const ControlPanel = () => {
       try {
         const response = await axios.get('http://localhost:8000/api/lift/status/');
         const elevatorStatus = response.data;
-        setElevatorInfo(elevatorStatus);
+        setElevatorInfo(elevatorStatus);  // Assuming elevatorInfo contains the destinations data
       } catch (error) {
         console.error('Error fetching elevator status:', error);
       }
     };
 
+    // Fetch elevator configuration initially
+    fetchElevatorConfig();
+
+    // Set up interval for fetching elevator status
     const interval = setInterval(() => {
       fetchElevatorStatus();
     }, 1000);
 
-    fetchElevatorConfig();
+    // Fetch elevator status initially
     fetchElevatorStatus();
 
+    // Clean up interval
     return () => clearInterval(interval);
   }, []);
 
@@ -50,12 +55,13 @@ const ControlPanel = () => {
         to_floor: floor,
         elevatorId: targetElevator
       });
-
-      // Update elevator info and selected floor
-      setElevatorInfo(response.data);
+  
+      // Assuming the response contains updated elevator information
+      setElevatorInfo(response.data); // Update elevator info with new data
+  
       setSelectedFloor(floor);
       setSelectedElevator(targetElevator);
-
+  
       // Reset selected floor and elevator after a delay
       setTimeout(() => {
         setSelectedFloor(null);
@@ -65,21 +71,23 @@ const ControlPanel = () => {
       console.error('Error requesting elevator:', error);
     }
   };
-
+  
+  
+  
   const isElevatorArrived = (elevatorId, floor) => {
     if (!Array.isArray(elevatorInfo)) {
       return false;
     }
-    const elevator = elevatorInfo.find(elevator => elevator.id === elevatorId);
-    if (elevator) {
-      return elevator.floor === floor;
+    
+    for (let i = 0; i < elevatorInfo.length; i++) {
+      if (elevatorInfo[i].id === elevatorId) {
+        return elevatorInfo[i].floor === floor;
+      }
     }
+    
     return false;
   };
   
-  
-
-
   return (
     <div style={{ paddingLeft: '25px', paddingTop: '25px' }}>
       <h2>Select Floor:</h2>
@@ -110,11 +118,25 @@ const ControlPanel = () => {
                 {floor}
               </button>
             ))}
+            <p><b>Destinations:</b></p>
+            <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+              {elevatorInfo && Array.isArray(elevatorInfo) && elevatorInfo.map(elevator => {
+                if (elevator.id === lift.elevator && elevator.destinations) {
+                  return elevator.destinations.map((destination, index) => (
+                    <b key={index} style={{ marginRight: '10px' }}>{destination}</b>
+                  ));
+                }
+                return null; // Return null if elevator ID doesn't match or destinations are undefined
+              })}
+            </div>
           </div>
         ))}
       </div>
     </div>
   );
-};
-
-export default ControlPanel;
+  };
+  
+  export default ControlPanel;
+  
+  
+  

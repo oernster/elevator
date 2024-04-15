@@ -3,7 +3,7 @@ from django.db import models
 
 class Elevator(models.Model):
     id = models.IntegerField(primary_key=True)  # Add id field as primary key
-    floor = models.IntegerField()
+    floor = models.IntegerField(default=1)
     destinations = models.JSONField(default=list)
 
     def __str__(self):
