@@ -17,8 +17,14 @@ class ElevatorRequestView(APIView):
             elevator = Elevator.objects.get(id=elevator_id)
 
             # Move the elevator to the requested floor
+            elevator.destinations = []
+            if to_floor > elevator.floor:
+                for d in range(elevator.floor, to_floor + 1):
+                    elevator.destinations.append(d)  # Update the destinations
+            else:
+                for d in range(to_floor, elevator.floor + 1):
+                    elevator.destinations.append(d)  # Update the destinations
             elevator.floor = to_floor  # Update the current floor
-            elevator.destinations.append(to_floor)  # Update the destinations
             elevator.save()
 
             return Response({'message': 'Elevator requested successfully'})
