@@ -106,24 +106,27 @@ const ControlPanel = () => {
         console.error('Elevator information is not available.');
         return;
       }
-
+  
       let nearestElevator = null;
       let minDistance = Infinity;
-
+  
       // Iterate through each elevator
       for (const elevator of lifts) {
         // Check if the elevator services the selected global floor
         if (elevator.serviced_floors.includes(floor)) {
           // Calculate the distance between the elevator's current floor and the requested floor
-          const distance = Math.abs(elevatorInfo.find(e => e.id === elevator.elevator).floor - floor);
-          // Update the nearest elevator if the current elevator is closer
-          if (distance < minDistance) {
-            minDistance = distance;
-            nearestElevator = elevator.elevator;
+          const elevatorStatus = elevatorInfo.find(e => e.id === elevator.elevator);
+          if (elevatorStatus) {
+            const distance = Math.abs(elevatorStatus.floor - floor);
+            // Update the nearest elevator if the current elevator is closer
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestElevator = elevator.elevator;
+            }
           }
         }
       }
-
+  
       // Call the function to handle floor selection for the nearest elevator
       if (nearestElevator) {
         await handleFloorSelection(floor, nearestElevator);
@@ -132,6 +135,7 @@ const ControlPanel = () => {
       console.error('Error selecting nearest elevator:', error);
     }
   };
+  
 
   const highlightFloorsSequentially = async (elevatorId, targetFloor) => {
     try {
