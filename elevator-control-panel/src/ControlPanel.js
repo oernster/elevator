@@ -4,31 +4,35 @@ import axios from 'axios';
 const ControlPanel = () => {
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [elevatorInfo, setElevatorInfo] = useState(null);
-  const [servicedFloors, setServicedFloors] = useState([]);
+  const [lifts, setLifts] = useState([]);
 
   useEffect(() => {
     const fetchElevatorConfig = async () => {
       try {
-        const response = await axios.get('/api/lift/config/');
-        const elevatorConfigs = response.data.lifts; // Assuming the response contains 'lifts' key
-        const allServicedFloors = elevatorConfigs.flatMap(config => config.serviced_floors);
-        setServicedFloors([...new Set(allServicedFloors)]); // Remove duplicates
+        const response = await axios.get('http://localhost:8000/api/lift/config/');
+        const elevatorData = response.data.lifts; // Assuming the response contains 'lifts' key
+
+        if (!Array.isArray(elevatorData)) {
+          throw new Error('Invalid elevator data');
+        }
+
+        setLifts(elevatorData);
       } catch (error) {
         console.error('Error fetching elevator configuration:', error);
       }
-    }; 
+    };
 
     fetchElevatorConfig();
   }, []);
 
   const handleFloorSelection = async (floor) => {
     try {
-      const response = await axios.post('/api/lift/request/', {
-        from_floor: 0, // Assuming the control panel is on the ground floor
+      const response = await axios.post('http://localhost:8000/api/lift/request/', {
+        from_floor: null,  // Adjust this based on your implementation
         to_floor: floor
       });
       setElevatorInfo(response.data);
-      setSelectedFloor(floor); // Update selected floor
+      setSelectedFloor(floor);
     } catch (error) {
       console.error('Error requesting elevator:', error);
     }
@@ -38,20 +42,21 @@ const ControlPanel = () => {
     <div>
       <h2>Select Floor:</h2>
       <div>
-        {servicedFloors.length > 0 ? (
-          servicedFloors.map(floor => (
-            <button
-              key={floor}
-              onClick={() => handleFloorSelection(floor)}
-              disabled={selectedFloor === floor}
-              style={{ marginRight: '5px' }}
-            >
-              {floor}
-            </button>
-          ))
-        ) : (
-          <p>No serviced floors available</p>
-        )}
+        {lifts.map(lift => (
+          <div key={lift.elevator}>
+            <p>Elevator: {lift.elevator}</p>
+            {lift.serviced_floors.map(floor => (
+              <button
+                key={floor}
+                onClick={() => handleFloorSelection(floor)}
+                disabled={selectedFloor === floor}
+                style={{ marginRight: '5px' }}
+              >
+                {floor}
+              </button>
+            ))}
+          </div>
+        ))}
       </div>
       {elevatorInfo && (
         <div>
