@@ -12,6 +12,8 @@
 
 ## Open another shell and cd elevator/elevator-control-panel
 
+## install npm
+
 ### npm install axios
 
 ### npm start
