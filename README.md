@@ -12,7 +12,13 @@
 
 ## Open another shell and cd elevator/elevator-control-panel
 
+## install npm
+
 ### npm install axios
+
+### npm install react react-dom web-vitals
+
+### npm install react-scripts --save
 
 ### npm start
 
