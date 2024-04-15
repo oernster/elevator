@@ -1,12 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import generics
 from .models import Elevator, ElevatorConfiguration
-from .serializers import ElevatorSerializer, ElevatorConfigurationSerializer
+from .serializers import ElevatorStatusSerializer, ElevatorConfigurationSerializer
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from django.views import View
 
 
 class ElevatorRequestView(APIView):
@@ -20,10 +18,7 @@ class ElevatorRequestView(APIView):
 
             # Move the elevator to the requested floor
             elevator.floor = to_floor  # Update the current floor
-            elevator.save()
-
-            # Update the destinations of the elevator
-            elevator.destinations.append(to_floor)  # Assuming destinations is a list field in the Elevator model
+            elevator.destinations.append(to_floor)  # Update the destinations
             elevator.save()
 
             return Response({'message': 'Elevator requested successfully'})
@@ -31,22 +26,14 @@ class ElevatorRequestView(APIView):
             return Response({'error': str(e)}, status=500)
 
 
-
 class ElevatorStatusView(APIView):
     def get(self, request):
         try:
             elevators = Elevator.objects.all()
-            elevator_data = []
-            for elevator in elevators:
-                elevator_data.append({
-                    'id': elevator.id,  # Include elevator ID
-                    'floor': elevator.floor,
-                    'destinations': elevator.destinations
-                })
+            elevator_data = ElevatorStatusSerializer(elevators, many=True).data
             return Response(elevator_data)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
-
 
 
 class ElevatorConfigView(APIView):

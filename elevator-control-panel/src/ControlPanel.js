@@ -6,6 +6,7 @@ const ControlPanel = () => {
   const [selectedElevator, setSelectedElevator] = useState(null);
   const [elevatorInfo, setElevatorInfo] = useState([]);
   const [lifts, setLifts] = useState([]);
+  const [highlightedFloor, setHighlightedFloor] = useState(null);
 
   useEffect(() => {
     const fetchElevatorConfig = async () => {
@@ -27,7 +28,7 @@ const ControlPanel = () => {
       try {
         const response = await axios.get('http://localhost:8000/api/lift/status/');
         const elevatorStatus = response.data;
-        setElevatorInfo(elevatorStatus);  // Assuming elevatorInfo contains the destinations data
+        setElevatorInfo(elevatorStatus);
       } catch (error) {
         console.error('Error fetching elevator status:', error);
       }
@@ -55,39 +56,68 @@ const ControlPanel = () => {
         to_floor: floor,
         elevatorId: targetElevator
       });
-  
+
       // Assuming the response contains updated elevator information
-      setElevatorInfo(response.data); // Update elevator info with new data
-  
+      setElevatorInfo(response.data);
+
       setSelectedFloor(floor);
       setSelectedElevator(targetElevator);
-  
+
+      // Reset highlighted floor
+      setHighlightedFloor(null);
+
+      // Start sequential highlighting for the selected elevator
+      await highlightFloorsSequentially(targetElevator, floor);
+
+      // Set the final floor to green after sequence is completed
+      setHighlightedFloor(floor);
+
       // Reset selected floor and elevator after a delay
       setTimeout(() => {
         setSelectedFloor(null);
         setSelectedElevator(null);
+        setHighlightedFloor(null); // Reset highlighted floor
       }, 5000);
     } catch (error) {
       console.error('Error requesting elevator:', error);
     }
   };
-  
-  
-  
+
+  const highlightFloorsSequentially = async (elevatorId, targetFloor) => {
+    const elevator = elevatorInfo.find((elevator) => elevator.id === elevatorId);
+    if (!elevator || !elevator.destinations) {
+      return;
+    }
+
+    const currentFloor = elevator.floor;
+    const destinationFloors = elevator.destinations;
+
+    const start = currentFloor;
+    const end = targetFloor;
+    const direction = Math.sign(end - start);
+
+    for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
+      setHighlightedFloor(floor);
+      await delay(1000); // Wait for 1 second
+    }
+  };
+
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   const isElevatorArrived = (elevatorId, floor) => {
     if (!Array.isArray(elevatorInfo)) {
       return false;
     }
-    
+
     for (let i = 0; i < elevatorInfo.length; i++) {
       if (elevatorInfo[i].id === elevatorId) {
         return elevatorInfo[i].floor === floor;
       }
     }
-    
+
     return false;
   };
-  
+
   return (
     <div style={{ paddingLeft: '25px', paddingTop: '25px' }}>
       <h2>Select Floor:</h2>
@@ -100,19 +130,21 @@ const ControlPanel = () => {
                 key={floor}
                 onClick={() => handleFloorSelection(floor, lift.elevator)}
                 disabled={selectedFloor === floor && selectedElevator === lift.elevator}
-                style={{ 
-                  marginRight: '5px', 
+                style={{
+                  marginRight: '5px',
                   opacity: selectedFloor === floor && selectedElevator === lift.elevator ? 0.5 : 1,
-                  backgroundColor: 
-                    isElevatorArrived(lift.elevator, floor)
-                      ? 'green' 
-                      : selectedFloor === floor && selectedElevator === lift.elevator 
-                        ? 'grey' 
-                        : '#f0f0f0', // Light grey background
-                  color: 
-                    isElevatorArrived(lift.elevator, floor)
-                      ? 'yellow' 
-                      : 'black' 
+                  backgroundColor:
+                    highlightedFloor === floor && selectedElevator === lift.elevator
+                      ? 'yellow' // yellow for intermediate floors
+                      : isElevatorArrived(lift.elevator, floor)
+                        ? 'green' // green for arrival floor
+                        : selectedFloor === floor && selectedElevator === lift.elevator
+                          ? 'grey' // Grey for selected floor
+                          : '#f0f0f0', // Light grey background for other floors
+                  color:
+                    isElevatorArrived(lift.elevator, floor) || highlightedFloor === floor
+                      ? 'black' // Black text color for the arrival and highlighted floor
+                      : 'black' // Black text color for other floors
                 }}
               >
                 {floor}
@@ -134,9 +166,6 @@ const ControlPanel = () => {
       </div>
     </div>
   );
-  };
-  
-  export default ControlPanel;
-  
-  
-  
+};
+
+export default ControlPanel;
