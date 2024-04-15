@@ -2,8 +2,12 @@ from django.db import models
 
 
 class Elevator(models.Model):
+    id = models.IntegerField(primary_key=True)  # Add id field as primary key
     floor = models.IntegerField()
     destinations = models.JSONField(default=list)
+
+    def __str__(self):
+        return f"Elevator {self.id} - Floor {self.floor}"
 
 
 class ElevatorConfiguration(models.Model):
