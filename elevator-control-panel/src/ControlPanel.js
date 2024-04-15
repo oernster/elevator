@@ -150,12 +150,12 @@ const ControlPanel = () => {
   };
 
   return (
-    <div style={{ paddingLeft: '25px', paddingTop: '25px' }}>
-      <h2>Select Floor:</h2>
+    <div>
+      <h2 style={{ marginLeft:1+'em'}}>Select Floor:</h2>
       <div>
         {lifts.map(lift => (
-          <div key={lift.elevator} style={{ marginLeft: '25px' }}>
-            <p>Elevator: {lift.elevator}</p>
+          <div key={lift.elevator} style={{ marginLeft:2 + 'em' }}>
+            <p><b>Elevator: {lift.elevator}</b></p>
             {lift.serviced_floors.map(floor => (
               <button
                 key={floor}
@@ -186,7 +186,7 @@ const ControlPanel = () => {
               {elevatorInfo && Array.isArray(elevatorInfo) && elevatorInfo.map(elevator => {
                 if (elevator.id === lift.elevator && elevator.destinations) {
                   return elevator.destinations.map((destination, index) => (
-                    <b key={index} style={{ marginRight: '10px' }}>{destination}</b>
+                    <p key={index} style={{ marginRight: '10px' }}>{destination}</p>
                   ));
                 }
                 return null; // Return null if elevator ID doesn't match or destinations are undefined
