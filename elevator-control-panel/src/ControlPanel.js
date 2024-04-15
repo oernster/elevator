@@ -7,8 +7,7 @@ const ControlPanel = () => {
   const [elevatorInfo, setElevatorInfo] = useState([]);
   const [lifts, setLifts] = useState([]);
   const [highlightedFloor, setHighlightedFloor] = useState(null);
-  const [directionIndicator, setDirectionIndicator] = useState('');
-  const [stopIndicator, setStopIndicator] = useState(false);
+  const [liftIndicators, setLiftIndicators] = useState({}); // State to track lift direction and STOP status for each elevator
   const UP_ARROW = '↑';
   const DOWN_ARROW = '↓';
   
@@ -23,6 +22,13 @@ const ControlPanel = () => {
         }
 
         setLifts(elevatorData);
+        
+        // Initialize lift indicators for each elevator
+        const initialIndicators = elevatorData.reduce((acc, lift) => {
+          acc[lift.elevator] = { direction: '', stop: false }; // Default to no direction and no STOP
+          return acc;
+        }, {});
+        setLiftIndicators(initialIndicators);
       } catch (error) {
         console.error('Error fetching elevator configuration:', error);
       }
@@ -69,9 +75,12 @@ const ControlPanel = () => {
 
       // Reset highlighted floor
       setHighlightedFloor(null);
+
       // Reset direction and stop indicators
-      setDirectionIndicator('');
-      setStopIndicator(false);
+      setLiftIndicators(prevIndicators => ({
+        ...prevIndicators,
+        [targetElevator]: { direction: '', stop: false }
+      }));
 
       // Start sequential highlighting for the selected elevator
       await highlightFloorsSequentially(targetElevator, floor);
@@ -80,14 +89,20 @@ const ControlPanel = () => {
       setHighlightedFloor(floor);
 
       // Set stop indicator on arrival
-      setStopIndicator(true);
+      setLiftIndicators(prevIndicators => ({
+        ...prevIndicators,
+        [targetElevator]: { ...prevIndicators[targetElevator], stop: true }
+      }));
 
       // Reset selected floor and elevator after a delay
       setTimeout(() => {
         setSelectedFloor(null);
         setSelectedElevator(null);
         setHighlightedFloor(null); // Reset highlighted floor
-        setStopIndicator(false); // Reset stop indicator
+        setLiftIndicators(prevIndicators => ({
+          ...prevIndicators,
+          [targetElevator]: { ...prevIndicators[targetElevator], stop: false }
+        }));
       }, 5000);
     } catch (error) {
       console.error('Error requesting elevator:', error);
@@ -107,7 +122,10 @@ const ControlPanel = () => {
     const end = targetFloor;
     const direction = Math.sign(end - start);
 
-    setDirectionIndicator(direction === 1 ? '↑' : '↓');
+    setLiftIndicators(prevIndicators => ({
+      ...prevIndicators,
+      [elevatorId]: { direction: direction === 1 ? UP_ARROW : DOWN_ARROW, stop: false }
+    }));
 
     for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
       setHighlightedFloor(floor);
@@ -178,8 +196,11 @@ const ControlPanel = () => {
         ))}
       </div>
       <div style={{ marginTop: '20px' }}>
-        <p><b>Direction:</b> {directionIndicator}</p>
-        {stopIndicator && <p style={{ color: 'red' }}>STOP</p>}
+        {Object.keys(liftIndicators).map(elevatorId => (
+          <div key={elevatorId}>
+            <p><b>Elevator {elevatorId}:</b> {liftIndicators[elevatorId].direction} {liftIndicators[elevatorId].stop && <span style={{ color: 'red' }}>STOP</span>}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
