@@ -7,7 +7,8 @@ const ControlPanel = () => {
   const [elevatorInfo, setElevatorInfo] = useState([]);
   const [lifts, setLifts] = useState([]);
   const [highlightedFloor, setHighlightedFloor] = useState(null);
-  const [liftIndicators, setLiftIndicators] = useState({}); // State to track lift direction and STOP status for each elevator
+  const [directionIndicator, setDirectionIndicator] = useState('');
+  const [stopIndicator, setStopIndicator] = useState(false);
   const UP_ARROW = '↑';
   const DOWN_ARROW = '↓';
   
@@ -22,13 +23,6 @@ const ControlPanel = () => {
         }
 
         setLifts(elevatorData);
-        
-        // Initialize lift indicators for each elevator
-        const initialIndicators = elevatorData.reduce((acc, lift) => {
-          acc[lift.elevator] = { direction: '', stop: false }; // Default to no direction and no STOP
-          return acc;
-        }, {});
-        setLiftIndicators(initialIndicators);
       } catch (error) {
         console.error('Error fetching elevator configuration:', error);
       }
@@ -61,78 +55,113 @@ const ControlPanel = () => {
 
   const handleFloorSelection = async (floor, targetElevator) => {
     try {
+      // Check if the selected floor is serviced by the elevator
+      const elevator = lifts.find((lift) => lift.elevator === targetElevator);
+      if (!elevator || !elevator.serviced_floors.includes(floor)) {
+        console.error('Selected floor is not serviced by the elevator.');
+        return;
+      }
+  
+      // Request the elevator to move to the selected floor
       const response = await axios.post('http://localhost:8000/api/lift/request/', {
         from_floor: null,
         to_floor: floor,
         elevatorId: targetElevator
       });
-
+  
       // Assuming the response contains updated elevator information
       setElevatorInfo(response.data);
-
+  
       setSelectedFloor(floor);
       setSelectedElevator(targetElevator);
-
+  
       // Reset highlighted floor
       setHighlightedFloor(null);
-
       // Reset direction and stop indicators
-      setLiftIndicators(prevIndicators => ({
-        ...prevIndicators,
-        [targetElevator]: { direction: '', stop: false }
-      }));
-
+      setDirectionIndicator('');
+      setStopIndicator(false);
+  
       // Start sequential highlighting for the selected elevator
       await highlightFloorsSequentially(targetElevator, floor);
-
+  
       // Set the final floor to green after sequence is completed
       setHighlightedFloor(floor);
-
+  
       // Set stop indicator on arrival
-      setLiftIndicators(prevIndicators => ({
-        ...prevIndicators,
-        [targetElevator]: { ...prevIndicators[targetElevator], stop: true }
-      }));
-
+      setStopIndicator(true);
+  
       // Reset selected floor and elevator after a delay
       setTimeout(() => {
         setSelectedFloor(null);
         setSelectedElevator(null);
         setHighlightedFloor(null); // Reset highlighted floor
-        setLiftIndicators(prevIndicators => ({
-          ...prevIndicators,
-          [targetElevator]: { ...prevIndicators[targetElevator], stop: false }
-        }));
+        setStopIndicator(false); // Reset stop indicator
       }, 5000);
     } catch (error) {
       console.error('Error requesting elevator:', error);
     }
   };
+  
+  
+  const handleGlobalFloorSelection = async (floor) => {
+    try {
+      if (!elevatorInfo) {
+        console.error('Elevator information is not available.');
+        return;
+      }
+  
+      // Iterate through each elevator
+      for (const elevator of lifts) {
+        // Check if the elevator services the selected global floor
+        if (elevator.serviced_floors.includes(floor)) {
+          // Call the function to handle floor selection for the current elevator
+          await handleFloorSelection(floor, elevator.elevator);
+        }
+      }
+    } catch (error) {
+      console.error('Error requesting all elevators to move:', error);
+    }
+  };
+  
+  
+  const setHighlightedFloorForElevator = (elevatorId, floor) => {
+    // Set the final floor to green for the specified elevator
+    setHighlightedFloor(floor);
+  
+    // Set stop indicator on arrival
+    setStopIndicator(true);
+  
+    // Reset stop indicator and highlighted floor after a delay
+    setTimeout(() => {
+      setStopIndicator(false); // Reset stop indicator
+      setHighlightedFloor(null); // Reset highlighted floor
+    }, 5000);
+  };
+  
 
   const highlightFloorsSequentially = async (elevatorId, targetFloor) => {
     const elevator = elevatorInfo.find((elevator) => elevator.id === elevatorId);
     if (!elevator || !elevator.destinations) {
       return;
     }
-
+  
     const currentFloor = elevator.floor;
     const destinationFloors = elevator.destinations;
-
+  
     const start = currentFloor;
     const end = targetFloor;
     const direction = Math.sign(end - start);
-
-    setLiftIndicators(prevIndicators => ({
-      ...prevIndicators,
-      [elevatorId]: { direction: direction === 1 ? UP_ARROW : DOWN_ARROW, stop: false }
-    }));
-
+  
+    setDirectionIndicator(direction === 1 ? '↑' : '↓');
+  
     for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
       setHighlightedFloor(floor);
-      await delay(1000); // Wait for 1 second
+      await delay(1000); // Wait for 1 second before moving to the next floor
     }
   };
-
+  
+  
+  
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const isElevatorArrived = (elevatorId, floor) => {
@@ -150,12 +179,29 @@ const ControlPanel = () => {
   };
 
   return (
-    <div>
-      <h2 style={{ marginLeft:1+'em'}}>Select Floor:</h2>
+    <div style={{ paddingLeft: '25px', paddingTop: '25px' }}>
+      <h2>Select Global Floor:</h2>
+      <div>
+        {Array.from({ length: 10 }, (_, i) => (
+          <button
+            key={i + 1}
+            onClick={() => elevatorInfo && handleGlobalFloorSelection(i + 1)}
+            style={{
+              marginRight: '5px',
+              backgroundColor: selectedFloor === i + 1 ? 'pink' : undefined,
+              color: selectedFloor === i + 1 ? 'white' : 'black',
+            }}
+          >
+          {i + 1}
+        </button>
+        
+        ))}
+      </div>
+      <h2>Select Floor for Each Elevator:</h2>
       <div>
         {lifts.map(lift => (
-          <div key={lift.elevator} style={{ marginLeft:2 + 'em' }}>
-            <p><b>Elevator: {lift.elevator}</b></p>
+          <div key={lift.elevator} style={{ marginLeft: '25px' }}>
+            <p>Elevator: {lift.elevator}</p>
             {lift.serviced_floors.map(floor => (
               <button
                 key={floor}
@@ -186,17 +232,18 @@ const ControlPanel = () => {
               {elevatorInfo && Array.isArray(elevatorInfo) && elevatorInfo.map(elevator => {
                 if (elevator.id === lift.elevator && elevator.destinations) {
                   return elevator.destinations.map((destination, index) => (
-                    <p key={index} style={{ marginRight: '10px' }}>{destination}</p>
+                    <b key={index} style={{ marginRight: '10px' }}>{destination}</b>
                   ));
                 }
                 return null; // Return null if elevator ID doesn't match or destinations are undefined
               })}
             </div>
-            <div style={{ marginTop: '20px' }}>
-              <p><b>{liftIndicators[lift.elevator].direction} {liftIndicators[lift.elevator].stop && <span style={{ color: 'red' }}>STOP</span>}</b></p>
-            </div>
           </div>
         ))}
+      </div>
+      <div style={{ marginTop: '20px' }}>
+        <p><b>Direction:</b> {directionIndicator}</p>
+        {stopIndicator && <p style={{ color: 'red' }}>STOP</p>}
       </div>
     </div>
   );
