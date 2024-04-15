@@ -16,7 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from elevator_api.views import ElevatorRequestView, ElevatorStatusView, ElevatorConfigView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/lift/request/', ElevatorRequestView.as_view(), name='elevator-request'),
+    path('api/lift/status/', ElevatorStatusView.as_view(), name='elevator-status'),
+    path('api/lift/config/', ElevatorConfigView.as_view(), name='elevator-config'),
 ]
