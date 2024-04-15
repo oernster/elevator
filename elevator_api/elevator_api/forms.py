@@ -17,6 +17,6 @@ class ElevatorConfigurationForm(forms.ModelForm):
 class ElevatorForm(forms.ModelForm):
     class Meta:
         model = Elevator
-        fields = ['destinations']
+        fields = ['floor', 'destinations']
 
 
