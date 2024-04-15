@@ -6,12 +6,12 @@ const ControlPanel = () => {
   const [selectedElevator, setSelectedElevator] = useState(null);
   const [elevatorInfo, setElevatorInfo] = useState([]);
   const [lifts, setLifts] = useState([]);
-  const [highlightedFloor, setHighlightedFloor] = useState(null);
-  const [directionIndicator, setDirectionIndicator] = useState('');
-  const [stopIndicator, setStopIndicator] = useState(false);
+  const [highlightedFloors, setHighlightedFloors] = useState({});
+  const [stopIndicators, setStopIndicators] = useState({});
+  const [directionIndicators, setDirectionIndicators] = useState({});
   const UP_ARROW = '↑';
   const DOWN_ARROW = '↓';
-  
+
   useEffect(() => {
     const fetchElevatorConfig = async () => {
       try {
@@ -75,41 +75,38 @@ const ControlPanel = () => {
       setSelectedFloor(floor);
       setSelectedElevator(targetElevator);
   
-      // Reset highlighted floor
-      setHighlightedFloor(null);
-      // Reset direction and stop indicators
-      setDirectionIndicator('');
-      setStopIndicator(false);
+      // Reset highlighted floors, direction, and stop indicators for the specific elevator
+      setHighlightedFloors(prevState => ({ ...prevState, [targetElevator]: null }));
+      setDirectionIndicators(prevState => ({ ...prevState, [targetElevator]: '' }));
+      setStopIndicators(prevState => ({ ...prevState, [targetElevator]: false }));
   
       // Start sequential highlighting for the selected elevator
       await highlightFloorsSequentially(targetElevator, floor);
   
       // Set the final floor to green after sequence is completed
-      setHighlightedFloor(floor);
-  
-      // Set stop indicator on arrival
-      setStopIndicator(true);
+      setHighlightedFloors(prevState => ({ ...prevState, [targetElevator]: floor }));
+      setStopIndicators(prevState => ({ ...prevState, [targetElevator]: true }));
   
       // Reset selected floor and elevator after a delay
       setTimeout(() => {
         setSelectedFloor(null);
         setSelectedElevator(null);
-        setHighlightedFloor(null); // Reset highlighted floor
-        setStopIndicator(false); // Reset stop indicator
+        setHighlightedFloors(prevState => ({ ...prevState, [targetElevator]: null }));
+        setStopIndicators(prevState => ({ ...prevState, [targetElevator]: false }));
       }, 5000);
     } catch (error) {
       console.error('Error requesting elevator:', error);
     }
   };
   
-  
+
   const handleGlobalFloorSelection = async (floor) => {
     try {
       if (!elevatorInfo) {
         console.error('Elevator information is not available.');
         return;
       }
-  
+
       // Iterate through each elevator
       for (const elevator of lifts) {
         // Check if the elevator services the selected global floor
@@ -122,46 +119,32 @@ const ControlPanel = () => {
       console.error('Error requesting all elevators to move:', error);
     }
   };
-  
-  
-  const setHighlightedFloorForElevator = (elevatorId, floor) => {
-    // Set the final floor to green for the specified elevator
-    setHighlightedFloor(floor);
-  
-    // Set stop indicator on arrival
-    setStopIndicator(true);
-  
-    // Reset stop indicator and highlighted floor after a delay
-    setTimeout(() => {
-      setStopIndicator(false); // Reset stop indicator
-      setHighlightedFloor(null); // Reset highlighted floor
-    }, 5000);
-  };
-  
 
   const highlightFloorsSequentially = async (elevatorId, targetFloor) => {
-    const elevator = elevatorInfo.find((elevator) => elevator.id === elevatorId);
-    if (!elevator || !elevator.destinations) {
-      return;
-    }
-  
-    const currentFloor = elevator.floor;
-    const destinationFloors = elevator.destinations;
-  
-    const start = currentFloor;
-    const end = targetFloor;
-    const direction = Math.sign(end - start);
-  
-    setDirectionIndicator(direction === 1 ? '↑' : '↓');
-  
-    for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
-      setHighlightedFloor(floor);
-      await delay(1000); // Wait for 1 second before moving to the next floor
+    try {
+      const elevator = elevatorInfo.find((elevator) => elevator.id === elevatorId);
+      if (!elevator || !elevator.destinations) {
+        return;
+      }
+
+      const currentFloor = elevator.floor;
+      const destinationFloors = elevator.destinations;
+
+      const start = currentFloor;
+      const end = targetFloor;
+      const direction = Math.sign(end - start);
+
+      setDirectionIndicators(prevState => ({ ...prevState, [elevatorId]: direction === 1 ? '↑' : '↓' }));
+
+      for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
+        await delay(1000); // Wait for 1 second before moving to the next floor
+        setHighlightedFloors(prevState => ({ ...prevState, [elevatorId]: floor }));
+      }
+    } catch (error) {
+      console.error('Error highlighting floors sequentially:', error);
     }
   };
-  
-  
-  
+
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const isElevatorArrived = (elevatorId, floor) => {
@@ -192,9 +175,8 @@ const ControlPanel = () => {
               color: selectedFloor === i + 1 ? 'white' : 'black',
             }}
           >
-          {i + 1}
-        </button>
-        
+            {i + 1}
+          </button>
         ))}
       </div>
       <h2>Select Floor for Each Elevator:</h2>
@@ -211,15 +193,15 @@ const ControlPanel = () => {
                   marginRight: '5px',
                   opacity: selectedFloor === floor && selectedElevator === lift.elevator ? 0.5 : 1,
                   backgroundColor:
-                    highlightedFloor === floor && selectedElevator === lift.elevator
+                    highlightedFloors[lift.elevator] === floor
                       ? 'yellow' // yellow for intermediate floors
                       : isElevatorArrived(lift.elevator, floor)
-                        ? 'green' // green for arrival floor
-                        : selectedFloor === floor && selectedElevator === lift.elevator
-                          ? 'grey' // Grey for selected floor
-                          : '#f0f0f0', // Light grey background for other floors
+                      ? 'green' // green for arrival floor
+                      : selectedFloor === floor && selectedElevator === lift.elevator
+                      ? 'grey' // Grey for selected floor
+                      : '#f0f0f0', // Light grey background for other floors
                   color:
-                    isElevatorArrived(lift.elevator, floor) || highlightedFloor === floor
+                    isElevatorArrived(lift.elevator, floor) || highlightedFloors[lift.elevator] === floor
                       ? 'black' // Black text color for the arrival and highlighted floor
                       : 'black' // Black text color for other floors
                 }}
@@ -229,21 +211,25 @@ const ControlPanel = () => {
             ))}
             <p><b>Destinations:</b></p>
             <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-              {elevatorInfo && Array.isArray(elevatorInfo) && elevatorInfo.map(elevator => {
-                if (elevator.id === lift.elevator && elevator.destinations) {
-                  return elevator.destinations.map((destination, index) => (
-                    <p key={index} style={{ marginRight: '10px' }}>{destination}</p>
-                  ));
-                }
-                return null; // Return null if elevator ID doesn't match or destinations are undefined
-              })}
+              {elevatorInfo &&
+                Array.isArray(elevatorInfo) &&
+                elevatorInfo.map((elevator) => {
+                  if (elevator.id === lift.elevator && elevator.destinations) {
+                    return elevator.destinations.map((destination, index) => (
+                      <p key={index} style={{ marginRight: '10px' }}>
+                        {destination}
+                      </p>
+                    ));
+                  }
+                  return null; // Return null if elevator ID doesn't match or destinations are undefined
+                })}
+            </div>
+            <div style={{ marginTop: '20px' }}>
+              <p><b>Direction:</b> {directionIndicators[lift.elevator]}</p>
+              {stopIndicators[lift.elevator] && <p style={{ color: 'red' }}>STOP</p>}
             </div>
           </div>
         ))}
-      </div>
-      <div style={{ marginTop: '20px' }}>
-        <p><b>Direction:</b> {directionIndicator}</p>
-        {stopIndicator && <p style={{ color: 'red' }}>STOP</p>}
       </div>
     </div>
   );
