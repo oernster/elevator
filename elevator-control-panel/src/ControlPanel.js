@@ -7,7 +7,11 @@ const ControlPanel = () => {
   const [elevatorInfo, setElevatorInfo] = useState([]);
   const [lifts, setLifts] = useState([]);
   const [highlightedFloor, setHighlightedFloor] = useState(null);
-
+  const [directionIndicator, setDirectionIndicator] = useState('');
+  const [stopIndicator, setStopIndicator] = useState(false);
+  const UP_ARROW = '↑';
+  const DOWN_ARROW = '↓';
+  
   useEffect(() => {
     const fetchElevatorConfig = async () => {
       try {
@@ -65,6 +69,9 @@ const ControlPanel = () => {
 
       // Reset highlighted floor
       setHighlightedFloor(null);
+      // Reset direction and stop indicators
+      setDirectionIndicator('');
+      setStopIndicator(false);
 
       // Start sequential highlighting for the selected elevator
       await highlightFloorsSequentially(targetElevator, floor);
@@ -72,11 +79,15 @@ const ControlPanel = () => {
       // Set the final floor to green after sequence is completed
       setHighlightedFloor(floor);
 
+      // Set stop indicator on arrival
+      setStopIndicator(true);
+
       // Reset selected floor and elevator after a delay
       setTimeout(() => {
         setSelectedFloor(null);
         setSelectedElevator(null);
         setHighlightedFloor(null); // Reset highlighted floor
+        setStopIndicator(false); // Reset stop indicator
       }, 5000);
     } catch (error) {
       console.error('Error requesting elevator:', error);
@@ -95,6 +106,8 @@ const ControlPanel = () => {
     const start = currentFloor;
     const end = targetFloor;
     const direction = Math.sign(end - start);
+
+    setDirectionIndicator(direction === 1 ? '↑' : '↓');
 
     for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
       setHighlightedFloor(floor);
@@ -163,6 +176,10 @@ const ControlPanel = () => {
             </div>
           </div>
         ))}
+      </div>
+      <div style={{ marginTop: '20px' }}>
+        <p><b>Direction:</b> {directionIndicator}</p>
+        {stopIndicator && <p style={{ color: 'red' }}>STOP</p>}
       </div>
     </div>
   );

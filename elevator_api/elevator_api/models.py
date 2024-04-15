@@ -5,6 +5,7 @@ class Elevator(models.Model):
     id = models.IntegerField(primary_key=True)  # Add id field as primary key
     floor = models.IntegerField(default=1)
     destinations = models.JSONField(default=list)
+    requested_destinations = models.JSONField(default=list)  # New field to store requested destinations temporarily
 
     def __str__(self):
         return f"Elevator {self.id} - Floor {self.floor}"
