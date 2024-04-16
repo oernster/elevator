@@ -1,5 +1,6 @@
 # cors_middleware.py
 
+
 class CorsMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

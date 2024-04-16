@@ -2,10 +2,10 @@ from django.db import models
 
 
 class Elevator(models.Model):
-    id = models.IntegerField(primary_key=True)  # Add id field as primary key
+    id = models.IntegerField(primary_key=True)
     floor = models.IntegerField(default=1)
     destinations = models.JSONField(default=list)
-    requested_destinations = models.JSONField(default=list)  # New field to store requested destinations temporarily
+    requested_destinations = models.JSONField(default=list)
 
     def __str__(self):
         return f"Elevator {self.id} - Floor {self.floor}"

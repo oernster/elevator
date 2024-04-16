@@ -13,18 +13,16 @@ class ElevatorRequestView(APIView):
             to_floor = request.data.get('to_floor')
             elevator_id = request.data.get('elevatorId')
 
-            # Find the elevator
             elevator = Elevator.objects.get(id=elevator_id)
 
-            # Move the elevator to the requested floor
             elevator.destinations = []
             if to_floor > elevator.floor:
                 for d in range(elevator.floor, to_floor + 1):
-                    elevator.destinations.append(d)  # Update the destinations
+                    elevator.destinations.append(d)
             else:
                 for d in range(to_floor, elevator.floor + 1):
-                    elevator.destinations.append(d)  # Update the destinations
-            elevator.floor = to_floor  # Update the current floor
+                    elevator.destinations.append(d)
+            elevator.floor = to_floor
             elevator.save()
 
             return Response({'message': 'Elevator requested successfully'})
@@ -49,15 +47,13 @@ class ElevatorConfigView(APIView):
 
     def get(self, request):
         try:
-            # Fetch elevator configurations
             elevator_configs = ElevatorConfiguration.objects.all()
             serialized_configs = ElevatorConfigurationSerializer(elevator_configs, many=True).data
 
-            # Construct lift data from elevator configurations
-            lift_data = [{'elevator': config['elevator'], 'serviced_floors': config['serviced_floors']} 
+            lift_data = [{'elevator': config['elevator'], 
+                          'serviced_floors': config['serviced_floors']} 
                          for config in serialized_configs]
 
-            # Create a JSON response with lift data
             response = JsonResponse({'lifts': lift_data})
 
             # Add CORS headers
