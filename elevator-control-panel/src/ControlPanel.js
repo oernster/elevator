@@ -156,7 +156,7 @@ const ControlPanel = () => {
       setDirectionIndicators(prevState => ({ ...prevState, [elevatorId]: direction === 1 ? '↑' : '↓' }));
   
       for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
-        await delay(1000); // Wait for 1 second before moving to the next floor
+        await delay(5000); // Wait for 1 second before moving to the next floor
         setHighlightedFloors(prevState => ({ ...prevState, [elevatorId]: floor }));
       }
   
