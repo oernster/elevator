@@ -99,7 +99,6 @@ const ControlPanel = () => {
     }
   };
 
-
   const handleGlobalFloorSelection = async (floor) => {
     try {
       if (!elevatorInfo) {
@@ -115,16 +114,20 @@ const ControlPanel = () => {
         // Check if the elevator services the selected global floor
         if (elevator.serviced_floors.includes(floor)) {
           // Calculate the distance between the elevator's current floor and the requested floor
-          const elevatorStatus = elevatorInfo.find(e => e.id === elevator.elevator);
-          if (elevatorStatus) {
-            const distance = Math.abs(elevatorStatus.floor - floor);
-            // Update the nearest elevator if the current elevator is closer
-            if (distance < minDistance) {
-              minDistance = distance;
-              nearestElevator = elevator.elevator;
-            }
+          const distance = Math.abs(elevatorInfo.find(e => e.id === elevator.elevator).floor - floor);
+          // Update the nearest elevator if the current elevator is closer
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestElevator = elevator.elevator;
           }
         }
+      }
+  
+      // Check if the nearest elevator is already at the selected floor
+      const elevator = elevatorInfo.find(e => e.id === nearestElevator);
+      if (elevator && elevator.floor === floor) {
+        // Do nothing if the elevator is already at the selected floor
+        return;
       }
   
       // Call the function to handle floor selection for the nearest elevator
@@ -135,7 +138,6 @@ const ControlPanel = () => {
       console.error('Error selecting nearest elevator:', error);
     }
   };
-  
 
   const highlightFloorsSequentially = async (elevatorId, targetFloor) => {
     try {
@@ -143,24 +145,28 @@ const ControlPanel = () => {
       if (!elevator || !elevator.destinations) {
         return;
       }
-
+  
       const currentFloor = elevator.floor;
       const destinationFloors = elevator.destinations;
-
+  
       const start = currentFloor;
       const end = targetFloor;
       const direction = Math.sign(end - start);
-
+  
       setDirectionIndicators(prevState => ({ ...prevState, [elevatorId]: direction === 1 ? '↑' : '↓' }));
-
+  
       for (let floor = start; direction === 1 ? floor <= end : floor >= end; floor += direction) {
         await delay(1000); // Wait for 1 second before moving to the next floor
         setHighlightedFloors(prevState => ({ ...prevState, [elevatorId]: floor }));
       }
+  
+      // Ensure the final destination floor turns green once the elevator arrives
+      setHighlightedFloors(prevState => ({ ...prevState, [elevatorId]: end }));
     } catch (error) {
       console.error('Error highlighting floors sequentially:', error);
     }
   };
+  
 
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
