@@ -26,6 +26,6 @@
 
 The React front end will launch and allow you to communicate with the backend invisibly.
 
-If you want to the REST API endpoints directly then you can go to 127.0.0.1:8000 and play with whichever URLs you want to from urls.py.
+If you want to use the REST API endpoints directly then you can go to 127.0.0.1:8000 and play with whichever URLs you want to from urls.py.
 
 The React front end is available from http://localhost:3000/
