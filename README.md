@@ -4,9 +4,9 @@
 
 ## Create a virtual environment and activate it.
 
-### pip install -r elevator/requirements.txt
-
 ### cd elevator_api
+
+### pip install -r requirements.txt
 
 ### python manage.py runserver (this will run the backend on 127.0.0.1:8000)
 
