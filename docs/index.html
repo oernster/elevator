@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Elevator Control Panel: Django REST + React demo</title>
+  <meta name="description" content="A local-first full-stack sample app: a Django REST Framework backend and a React control panel driving three simulated lifts. A personal learning and portfolio project that runs on your own machine." />
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --bg-elev: #ffffff;
+      --ink: #1c2530;
+      --ink-soft: #55636f;
+      --line: #e2e6eb;
+      --accent: #2f6fb0;      /* steel blue */
+      --accent-ink: #ffffff;
+      --amber: #c9820a;       /* lift indicator amber */
+      --green: #2e7d46;
+      --code-bg: #0f1620;
+      --code-ink: #e8edf3;
+      --shadow: 0 1px 2px rgba(20,30,45,.06), 0 8px 24px rgba(20,30,45,.06);
+      --radius: 12px;
+      --maxw: 940px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e131a;
+        --bg-elev: #161d27;
+        --ink: #e7ecf2;
+        --ink-soft: #9aa7b4;
+        --line: #263140;
+        --accent: #5aa0e0;
+        --accent-ink: #08121c;
+        --amber: #e0a83c;
+        --green: #56b877;
+        --code-bg: #0a0f16;
+        --code-ink: #dbe4ee;
+        --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0e131a; --bg-elev: #161d27; --ink: #e7ecf2; --ink-soft: #9aa7b4;
+      --line: #263140; --accent: #5aa0e0; --accent-ink: #08121c; --amber: #e0a83c;
+      --green: #56b877; --code-bg: #0a0f16; --code-ink: #dbe4ee;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+    :root[data-theme="light"] {
+      --bg: #f6f7f9; --bg-elev: #ffffff; --ink: #1c2530; --ink-soft: #55636f;
+      --line: #e2e6eb; --accent: #2f6fb0; --accent-ink: #ffffff; --amber: #c9820a;
+      --green: #2e7d46; --code-bg: #0f1620; --code-ink: #e8edf3;
+      --shadow: 0 1px 2px rgba(20,30,45,.06), 0 8px 24px rgba(20,30,45,.06);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1, h2, h3 { line-height: 1.25; letter-spacing: -0.01em; }
+    code, pre { font-family: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace; }
+
+    /* Hero */
+    header.hero {
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(1200px 400px at 80% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%);
+    }
+    .hero-inner { display: flex; gap: 32px; align-items: center; padding: 56px 0 48px; flex-wrap: wrap; }
+    .hero-copy { flex: 1 1 380px; min-width: 300px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      padding: 5px 12px; border-radius: 999px;
+    }
+    h1 { font-size: clamp(30px, 5vw, 44px); margin: 18px 0 12px; }
+    .lede { font-size: 18px; color: var(--ink-soft); margin: 0 0 22px; max-width: 46ch; }
+    .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 15px;
+      border: 1px solid var(--line); color: var(--ink); background: var(--bg-elev);
+    }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+    .btn:hover { text-decoration: none; transform: translateY(-1px); }
+    .btn { transition: transform .12s ease; }
+
+    /* Elevator shaft motif */
+    .shaft { flex: 0 0 auto; width: 150px; display: flex; justify-content: center; }
+    .shaft-box {
+      width: 108px; background: var(--bg-elev); border: 1px solid var(--line);
+      border-radius: 14px; padding: 12px; box-shadow: var(--shadow);
+    }
+    .car {
+      height: 46px; border-radius: 8px; margin: 6px 0; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; border: 1px solid var(--line); color: var(--ink-soft);
+    }
+    .car.active { background: var(--green); color: #fff; border-color: transparent; }
+    .car.moving { background: color-mix(in srgb, var(--amber) 22%, transparent); color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, transparent); }
+    .dir { text-align: center; color: var(--amber); font-weight: 700; letter-spacing: .3em; }
+
+    /* Sections */
+    section { padding: 44px 0; border-bottom: 1px solid var(--line); }
+    section h2 { font-size: 24px; margin: 0 0 6px; }
+    section .sub { color: var(--ink-soft); margin: 0 0 24px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 18px 18px 16px; box-shadow: var(--shadow);
+    }
+    .card h3 { margin: 0 0 6px; font-size: 16px; }
+    .card p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+
+    /* Honesty callout */
+    .honest {
+      background: color-mix(in srgb, var(--amber) 8%, var(--bg-elev));
+      border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line));
+      border-radius: var(--radius); padding: 20px 22px;
+    }
+    .honest h2 { margin-top: 0; }
+    .honest ul { margin: 0; padding-left: 20px; }
+    .honest li { margin: 8px 0; }
+    .honest li strong { color: var(--ink); }
+
+    .note {
+      margin-top: 18px; font-size: 14.5px; color: var(--ink-soft);
+      border-left: 3px solid var(--accent); padding: 4px 0 4px 14px;
+    }
+
+    /* Screenshot */
+    figure { margin: 0; }
+    .shot {
+      width: 100%; max-width: 340px; border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); display: block;
+    }
+    .shot-row { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+    .shot-row .txt { flex: 1 1 300px; min-width: 260px; }
+    figcaption { color: var(--ink-soft); font-size: 13.5px; margin-top: 10px; }
+
+    /* Table */
+    .tbl-scroll { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 520px; }
+    th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--ink-soft); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; }
+    td code, .inline-code {
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent); padding: 2px 7px; border-radius: 6px; font-size: 13px; white-space: nowrap;
+    }
+    .method { font-weight: 700; }
+    .method.get { color: var(--green); }
+    .method.post { color: var(--amber); }
+
+    /* Code block */
+    pre {
+      background: var(--code-bg); color: var(--code-ink); border-radius: var(--radius);
+      padding: 18px 20px; overflow-x: auto; font-size: 13.5px; line-height: 1.7; margin: 0;
+      border: 1px solid var(--line);
+    }
+    pre .c { color: #7c8aa0; }
+    .steps { counter-reset: step; padding: 0; margin: 0 0 20px; list-style: none; }
+    .steps li { position: relative; padding-left: 40px; margin: 0 0 8px; color: var(--ink-soft); }
+    .steps li::before {
+      counter-increment: step; content: counter(step);
+      position: absolute; left: 0; top: 1px; width: 26px; height: 26px; border-radius: 50%;
+      background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .steps li strong { color: var(--ink); }
+
+    /* Stack chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      background: var(--bg-elev); border: 1px solid var(--line); border-radius: 999px;
+      padding: 6px 13px; font-size: 13.5px; color: var(--ink-soft);
+    }
+    .chip b { color: var(--ink); font-weight: 600; }
+
+    footer { padding: 32px 0 48px; color: var(--ink-soft); font-size: 14px; }
+    footer .wrap > div { margin-bottom: 6px; }
+
+    .theme-toggle {
+      position: fixed; top: 14px; right: 14px; z-index: 10;
+      background: var(--bg-elev); border: 1px solid var(--line); color: var(--ink-soft);
+      border-radius: 999px; padding: 7px 12px; font-size: 13px; cursor: pointer; box-shadow: var(--shadow);
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle colour theme">Theme</button>
+
+  <header class="hero">
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <span class="eyebrow">Personal project · Learning &amp; portfolio</span>
+        <h1>Elevator Control Panel</h1>
+        <p class="lede">A local-first full-stack sample app pairing a Django REST Framework backend with a React control panel that drives three simulated lifts.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/oernster/elevator">View source on GitHub</a>
+          <a class="btn" href="#run">Run it locally</a>
+        </div>
+      </div>
+      <div class="shaft" aria-hidden="true">
+        <div class="shaft-box">
+          <div class="dir">&#8593;</div>
+          <div class="car active">6</div>
+          <div class="car moving">5</div>
+          <div class="car">4</div>
+          <div class="car">3</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="what">
+      <div class="wrap">
+        <h2>What it is</h2>
+        <p class="sub">A small, self-contained example of wiring a REST API to a React front end.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Three lifts, per-floor service</h3>
+            <p>Each elevator services its own configured set of floors, read from the backend on load.</p>
+          </div>
+          <div class="card">
+            <h3>Two ways to call a lift</h3>
+            <p>Pick a floor and let the panel choose the nearest servicing lift, or drive a specific elevator directly.</p>
+          </div>
+          <div class="card">
+            <h3>Live-ish status</h3>
+            <p>The panel polls elevator status once a second and animates the car stepping between floors.</p>
+          </div>
+          <div class="card">
+            <h3>Clean REST surface</h3>
+            <p>Three JSON endpoints for configuration, status and floor requests, backed by SQLite.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="honesty">
+      <div class="wrap">
+        <div class="honest">
+          <h2>What it is not</h2>
+          <ul>
+            <li><strong>Not deployed and not production software.</strong> It runs on your own machine only: the backend on <span class="inline-code">127.0.0.1:8000</span> and the front end on <span class="inline-code">localhost:3000</span>.</li>
+            <li><strong>Not connected to any real elevator hardware.</strong> The lifts are rows in a local SQLite database; nothing physical moves.</li>
+            <li><strong>The dispatch logic is deliberately simple.</strong> The "quickest lift" is just the nearest servicing car by floor distance, not a real scheduling algorithm.</li>
+            <li><strong>It ships in Django development mode</strong> (debug on, a sample secret key, hard-coded localhost origins). It is not hardened for public hosting.</li>
+          </ul>
+        </div>
+        <p class="note">This page is an overview only. It cannot run the app, because the React front end needs the Django backend running on your machine. Follow the steps below to try it.</p>
+      </div>
+    </section>
+
+    <section id="screenshot">
+      <div class="wrap">
+        <div class="shot-row">
+          <figure>
+            <img class="shot" src="ElevatorControlPanel.jpg" alt="The React control panel showing three elevators, floor buttons and destination indicators." />
+            <figcaption>The React control panel in the browser.</figcaption>
+          </figure>
+          <div class="txt">
+            <h2>How it behaves</h2>
+            <p class="sub">A single-screen panel, no build tooling beyond Create React App.</p>
+            <p style="color:var(--ink-soft);margin:0 0 12px">The top row requests a floor from whichever servicing lift is closest. Below it, each elevator has its own floor buttons and shows its current destinations and travel direction.</p>
+            <p style="color:var(--ink-soft);margin:0">Buttons highlight amber while a car passes a floor and green on arrival, driven by the once-a-second status poll.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="api">
+      <div class="wrap">
+        <h2>API endpoints</h2>
+        <p class="sub">Served by Django REST Framework at <span class="inline-code">http://127.0.0.1:8000</span>.</p>
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/api/lift/config/</code></td>
+                <td>The serviced floors for each elevator.</td>
+              </tr>
+              <tr>
+                <td><span class="method get">GET</span></td>
+                <td><code>/api/lift/status/</code></td>
+                <td>Current floor and destinations for every elevator.</td>
+              </tr>
+              <tr>
+                <td><span class="method post">POST</span></td>
+                <td><code>/api/lift/request/</code></td>
+                <td>Request an elevator to a target floor.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">The Django admin and the browsable DRF views are also reachable while the server runs, so you can inspect the data directly.</p>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="wrap">
+        <h2>Architecture</h2>
+        <p class="sub">A conventional two-process split, talking over HTTP and JSON.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Front end</h3>
+            <p>React (Create React App) with axios. A single control-panel component holds state and polls the backend.</p>
+          </div>
+          <div class="card">
+            <h3>Back end</h3>
+            <p>Django REST Framework class-based views over Django ORM models, serialized to JSON.</p>
+          </div>
+          <div class="card">
+            <h3>Data</h3>
+            <p>A local SQLite file holds the elevators, their serviced floors and current destinations.</p>
+          </div>
+          <div class="card">
+            <h3>Boundary</h3>
+            <p>CORS is restricted to the local React origin; requests flow one way, from panel to API.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="run">
+      <div class="wrap">
+        <h2>Run it locally</h2>
+        <p class="sub">Two terminals: one for the API, one for the React app.</p>
+        <ol class="steps">
+          <li><strong>Backend:</strong> create and activate a virtual environment, then install the API requirements.</li>
+          <li><strong>Start Django</strong> on <span class="inline-code">127.0.0.1:8000</span>.</li>
+          <li><strong>Front end:</strong> install the npm dependencies in a second terminal.</li>
+          <li><strong>Start React</strong> and open <span class="inline-code">http://localhost:3000</span>.</li>
+        </ol>
+<pre><span class="c"># Terminal 1 - Django REST backend</span>
+cd elevator_api
+pip install -r requirements.txt
+python manage.py runserver
+
+<span class="c"># Terminal 2 - React control panel</span>
+cd elevator-control-panel
+npm install
+npm start</pre>
+        <p class="note">First run needs the database migrations applied (<span class="inline-code">python manage.py migrate</span>) and the elevator records populated. See the repository for details.</p>
+      </div>
+    </section>
+
+    <section id="stack">
+      <div class="wrap">
+        <h2>Tech stack</h2>
+        <p class="sub">Standard, boring, dependable pieces.</p>
+        <div class="chips">
+          <span class="chip"><b>Django</b> 5.0</span>
+          <span class="chip"><b>Django REST Framework</b> 3.15</span>
+          <span class="chip"><b>django-cors-headers</b></span>
+          <span class="chip"><b>SQLite</b></span>
+          <span class="chip"><b>React</b> 19</span>
+          <span class="chip"><b>axios</b></span>
+          <span class="chip"><b>Create React App</b></span>
+          <span class="chip"><b>Python</b> 3</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div>A personal full-stack learning project by <a href="https://github.com/oernster">Oliver Ernster</a>.</div>
+      <div>Source: <a href="https://github.com/oernster/elevator">github.com/oernster/elevator</a></div>
+      <div style="margin-top:10px;font-size:13px">This overview page is static and hosted on GitHub Pages; it does not run the application.</div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('themeToggle');
+      var root = document.documentElement;
+      function current() {
+        if (root.dataset.theme) return root.dataset.theme;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      btn.addEventListener('click', function () {
+        var next = current() === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = next;
+      });
+    })();
+  </script>
+</body>
+</html>
