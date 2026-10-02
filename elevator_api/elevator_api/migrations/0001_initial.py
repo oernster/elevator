@@ -8,38 +8,67 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Building',
+            name="Building",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
             ],
         ),
         migrations.CreateModel(
-            name='Elevator',
+            name="Elevator",
             fields=[
-                ('id', models.IntegerField(primary_key=True, serialize=False)),
-                ('floor', models.IntegerField()),
-                ('destinations', models.JSONField(default=list)),
+                ("id", models.IntegerField(primary_key=True, serialize=False)),
+                ("floor", models.IntegerField()),
+                ("destinations", models.JSONField(default=list)),
             ],
         ),
         migrations.CreateModel(
-            name='ElevatorConfiguration',
+            name="ElevatorConfiguration",
             fields=[
-                ('elevator', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='elevator_api.elevator')),
-                ('serviced_floors', models.JSONField(default=list)),
+                (
+                    "elevator",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        primary_key=True,
+                        serialize=False,
+                        to="elevator_api.elevator",
+                    ),
+                ),
+                ("serviced_floors", models.JSONField(default=list)),
             ],
         ),
         migrations.CreateModel(
-            name='ServicedFloor',
+            name="ServicedFloor",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('floor_number', models.IntegerField()),
-                ('building', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='elevator_api.building')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("floor_number", models.IntegerField()),
+                (
+                    "building",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="elevator_api.building",
+                    ),
+                ),
             ],
         ),
     ]

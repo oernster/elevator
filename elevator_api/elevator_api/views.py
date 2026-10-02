@@ -10,8 +10,8 @@ from django.utils.decorators import method_decorator
 class ElevatorRequestView(APIView):
     def post(self, request):
         try:
-            to_floor = request.data.get('to_floor')
-            elevator_id = request.data.get('elevatorId')
+            to_floor = request.data.get("to_floor")
+            elevator_id = request.data.get("elevatorId")
 
             elevator = Elevator.objects.get(id=elevator_id)
 
@@ -25,9 +25,9 @@ class ElevatorRequestView(APIView):
             elevator.floor = to_floor
             elevator.save()
 
-            return Response({'message': 'Elevator requested successfully'})
+            return Response({"message": "Elevator requested successfully"})
         except Exception as e:
-            return Response({'error': str(e)}, status=500)
+            return Response({"error": str(e)}, status=500)
 
 
 class ElevatorStatusView(APIView):
@@ -37,7 +37,7 @@ class ElevatorStatusView(APIView):
             elevator_data = ElevatorStatusSerializer(elevators, many=True).data
             return Response(elevator_data)
         except Exception as e:
-            return Response({'error': str(e)}, status=500)
+            return Response({"error": str(e)}, status=500)
 
 
 class ElevatorConfigView(APIView):
@@ -48,19 +48,27 @@ class ElevatorConfigView(APIView):
     def get(self, request):
         try:
             elevator_configs = ElevatorConfiguration.objects.all()
-            serialized_configs = ElevatorConfigurationSerializer(elevator_configs, many=True).data
+            serialized_configs = ElevatorConfigurationSerializer(
+                elevator_configs, many=True
+            ).data
 
-            lift_data = [{'elevator': config['elevator'], 
-                          'serviced_floors': config['serviced_floors']} 
-                         for config in serialized_configs]
+            lift_data = [
+                {
+                    "elevator": config["elevator"],
+                    "serviced_floors": config["serviced_floors"],
+                }
+                for config in serialized_configs
+            ]
 
-            response = JsonResponse({'lifts': lift_data})
+            response = JsonResponse({"lifts": lift_data})
 
             # Add CORS headers
-            response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
-            response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
-            response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response["Access-Control-Allow-Origin"] = "http://localhost:3000"
+            response["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            )
+            response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
 
             return response
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({"error": str(e)}, status=500)

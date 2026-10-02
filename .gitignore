@@ -1,4 +1,8 @@
 .yarn
-.pyc
-elevator_api/__pycache__/*.pyc
-../elevator-control-panel/yarn.lock
+
+# Python byte code, wherever it is written.
+__pycache__/
+*.pyc
+
+# npm installs; package.json and package-lock.json are the record.
+node_modules/

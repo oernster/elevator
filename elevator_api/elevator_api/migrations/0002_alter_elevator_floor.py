@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('elevator_api', '0001_initial'),
+        ("elevator_api", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='elevator',
-            name='floor',
+            model_name="elevator",
+            name="floor",
             field=models.IntegerField(default=1),
         ),
     ]

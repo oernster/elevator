@@ -12,7 +12,9 @@ class Elevator(models.Model):
 
 
 class ElevatorConfiguration(models.Model):
-    elevator = models.OneToOneField(Elevator, on_delete=models.CASCADE, primary_key=True)
+    elevator = models.OneToOneField(
+        Elevator, on_delete=models.CASCADE, primary_key=True
+    )
     serviced_floors = models.JSONField(default=list)
 
 
